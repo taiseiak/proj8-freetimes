@@ -1,0 +1,93 @@
+This file is for the testing of the web applicaiton.
+
+for range of 11/14/2017 - 11/20/2017 after clicking choose:
+
+if 322shared@gmail.com is chosen:
+output:
+event 1
+
+Class
+
+Thing to do every four days
+
+322 Lab
+
+Late night things
+
+Class
+
+Thing to do every three days
+
+322 Lab
+
+Embarrassing medical appointment
+
+Thing to do every four days
+
+Thing to do every three days
+
+if 322shared@gmail.com and 322 lab hours and contacts are chosen:
+output:
+event 1
+
+Class
+
+Thing to do every four days
+
+322 Lab
+
+Late night things
+
+Class
+
+Thing to do every three days
+
+322 Lab
+
+Embarrassing medical appointment
+
+Thing to do every four days
+
+Thing to do every three days
+
+Thing to do every four days
+
+All day long
+
+Thing to do every four days
+
+if all five options are chosen:
+output:
+event 1
+
+Class
+
+Thing to do every four days
+
+322 Lab
+
+Late night things
+
+Class
+
+Thing to do every three days
+
+322 Lab
+
+Embarrassing medical appointment
+
+Thing to do every four days
+
+Thing to do every three days
+
+Thing to do every four days
+
+All day long
+
+Thing to do every four days
+
+Vacation
+
+All day event - super busy
+
+Do things with people
