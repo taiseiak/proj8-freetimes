@@ -77,12 +77,84 @@ def getevents():
     """
     Send over the events of clicked calendars.
     """
-    app.logger.debug("getting events")
+    app.logger.info("getting events")
     event_list = []
+    free_list = []
     end = flask.session['end_date']
     begin = flask.session["begin_date"]
+    meeting_begin = flask.session['meeting_begin']
+    meeting_end = flask.session['meeting_end']
+
+
     calendars = request.form.getlist('list[]')
     add_to_event_list(event_list, calendars, begin, end)
+    begin_date = arrow.get(begin)
+    stop_date = arrow.get(end)
+
+    app.logger.debug(event_list)
+
+    while begin_date <= stop_date:
+        start_date = arrow.get(str(begin_date) + str(meeting_begin))
+        end_date = arrow.get(str(begin_date) + str(meeting_end))
+        free_list.append(
+            {'name': 'open', 'start': start_date, 'end': end_date})
+        begin_date = begin_date.shift(days=1)
+
+    for open_time in free_list:
+        for busy_time in event_list:
+            free_start = open_time['start'].time()
+            free_end = open_time['end'].time()
+            busy_start = busy_time['start'].time()
+            busy_end = busy_time['end'].time()
+
+            # check for single day events (check dates not times)
+            if open_time['start'].date() == busy_time['start'].date():
+                # if end times are the same, then it is an single day even
+                if open_time['end'].date() == busy_time['end'].date():
+                    if busy_start <= free_start:
+                        if busy_end >= free_end:
+                            free_list.remove(open_time)
+                            continue
+                        else:
+                            # free time overlaps
+                            open_time['start'] = busy_time['end']
+                    else:
+                        if free_end > busy_end:
+                            open_time['end'] = busy_time['start']
+                            free_list.append({'name': 'open',
+                                              'start': busy_time['end'],
+                                              'end': open_time['end']})
+                            continue
+                        else:
+                            if free_end <= busy_end:
+                                if free_end < busy_start:
+                                    open_time['end'] = busy_time['start']
+                                    continue
+
+                # Multi-day event
+                elif open_time['end'].date() < busy_time['end'].date():
+                    if free_start >= busy_start:
+                        free_list.remove(open_time)
+                        continue
+                    if free_end > busy_start:
+                        open_time['start'] = busy_time['start']
+                        continue
+
+            # truncate the end of multi day event
+            elif open_time['end'].date() == busy_time['end'].date():
+                if free_start < busy_end:
+                    if free_end > busy_end:
+                        open_time['start'] = busy_time['end']
+                        continue
+                if free_end <= busy_end:
+                    free_list.remove(open_time)
+                    continue
+
+    event_list += free_list
+    for item in event_list:
+        item['start'] = item['start'].isoformat()
+        item['end'] = item['end'].isoformat()
+    event_list = sorted(event_list, key=lambda k: arrow.get(k['start']))
     return flask.jsonify(result=event_list)
 
 
@@ -96,7 +168,13 @@ def add_to_event_list(event_list, calendars, begin, end):
                 orderBy='startTime').execute()
             events = eventsResult.get('items', [])
             for event in events:
-                event_list.append(event['summary'])
+                input_event = dict()
+                input_event['name'] = event['summary']
+                input_event['start'] = arrow.get(
+                    event['start']['dateTime'])
+                input_event['end'] = arrow.get(
+                    event['end']['dateTime'])
+                event_list.append(input_event)
         except:
             app.logger.debug('had a bad request')
 
@@ -237,6 +315,8 @@ def setrange():
     app.logger.debug("Setrange parsed {} - {}  dates as {} - {}".format(
         daterange_parts[0], daterange_parts[1],
         flask.session['begin_date'], flask.session['end_date']))
+    flask.session['meeting_begin'] = request.form.get('meeting_begin')
+    flask.session['meeting_end'] = request.form.get('meeting_end')
     return flask.redirect(flask.url_for("choose"))
 
 
