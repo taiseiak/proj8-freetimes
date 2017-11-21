@@ -90,12 +90,19 @@ def getevents():
     add_to_event_list(event_list, calendars, begin, end)
     begin_date = arrow.get(begin)
     stop_date = arrow.get(end)
+    def _to_num(time_str):
+        hh, mm = map(int, time_str.split(':'))
+        return [hh, mm]
+    s_hr = _to_num(str(meeting_begin))[0]
+    s_min = _to_num(str(meeting_begin))[1]
+    e_hr = _to_num(str(meeting_end))[0]
+    e_min = _to_num(str(meeting_end))[1]
 
     app.logger.debug(event_list)
 
     while begin_date <= stop_date:
-        start_date = arrow.get(str(begin_date) + str(meeting_begin))
-        end_date = arrow.get(str(begin_date) + str(meeting_end))
+        start_date = begin_date.shift(hours=s_hr, minutes=s_min)
+        end_date = begin_date.shift(hours=e_hr, minutes=e_min)
         free_list.append(
             {'name': 'open', 'start': start_date, 'end': end_date})
         begin_date = begin_date.shift(days=1)
@@ -154,6 +161,8 @@ def getevents():
     for item in event_list:
         item['start'] = item['start'].isoformat()
         item['end'] = item['end'].isoformat()
+        app.logger.debug("{} start = {}".format(item['name'], item['start']))
+        app.logger.debug("{} end = {}".format(item['name'], item['end']))
     event_list = sorted(event_list, key=lambda k: arrow.get(k['start']))
     return flask.jsonify(result=event_list)
 
